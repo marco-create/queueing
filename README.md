@@ -12,7 +12,7 @@ title: One-node M/D/1 system
   graph LR;
   A("Entry point")
   B("Leaving point")
-      A-- node --> B
+      A --> node --> B
 ```
 
 
@@ -23,5 +23,5 @@ title: Two-node M/D/1 system
   graph LR;
     A("Entry point")
     B("Leaving point")
-      A -- node --> node --> B
+      A --> node --> node --> B
 ```
