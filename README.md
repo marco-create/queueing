@@ -1,5 +1,12 @@
 ﻿Simple queueing project
 
+Get the repository and cd into the folder
+
+```
+git clone https://github.com/marco-create/queueing.git
+cd queueing
+```
+
 Install requirements from the root directory
 
 ```
