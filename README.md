@@ -11,9 +11,8 @@ title: One-node M/D/1 system
 ---
   graph LR;
   A("Entry point")
-  B(("UPF network"))
-  C("Leaving point")
-      A-->B --> C;
+  B("Leaving point")
+      A-- node --> B
 ```
 
 
@@ -25,8 +24,8 @@ title: Two-node M/D/1 system
     A("Entry point")
     subgraph Network
         direction LR
-        UPF 
-        MEC
+        node #1 
+        node #2
     end
     C("Leaving point")
       A --> Network --> C
