@@ -12,6 +12,7 @@ Now you can run it
 ```
 
 <hr>
+
 ```mermaid
 ---
 title: One-node M/D/1 system
