@@ -21,12 +21,7 @@ title: One-node M/D/1 system
 title: Two-node M/D/1 system
 ---
   graph LR;
-    A("Entry point")
-    subgraph Network
-        direction LR
-        node #1 
-        node #2
-    end
-    C("Leaving point")
-      A --> Network --> C
+    A("Entry point")
+    B("Leaving point")
+      A -- node -- node --> B
 ```
