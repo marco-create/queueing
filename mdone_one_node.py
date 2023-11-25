@@ -58,32 +58,11 @@ ag_slow.queue_action(queue=qn)
 qn.simulate(n=10)
 slow_data = qn.get_agent_data(return_header=True)
 cols = (slow_data[1]).split(',')
-# print(f'Only slow requests (n={len(slow_data[0])})')
-# print(cols)
-
-# for k in slow_data[0].keys():
-#     print(slow_data[0][k])
 
 # inject the faster lambdas
 ag_fast.queue_action(queue=qn)
 qn.simulate(n=10)
 fast_data = qn.get_agent_data()
-# print(f'With fast requests (n={len(fast_data)})')
-
-# for k, v in fast_data.items():
-#     print(v)
-
-# # calculate time spent in Q
-# print('Info')
-# for k, v in fast_data.items():
-#     print()
-#     print(f'Arrived at: {v[0, 0]}')
-#     print(f'Entered on: {v[0, -1]}')
-#     print(f'Time spent inside: {v[0, 2] - v[0, 0]}')
-#     print(f'Exited on {v[1, -1]}')
-
-# qn.animate()
-# plt.show()
 
 df = pd.DataFrame(data=[item[0] for k, item in fast_data.items()], columns=cols)
 df['q_id_exit'] = [item[1,-1] for k, item in fast_data.items()]
@@ -96,5 +75,6 @@ except Exception as e:
     print('Run again.')
     # for now force it (need to find a better solution)
     df['rho (ser/arr)'] = [item[0, 1] / item[0, 0] for k, item in fast_data.items()]
-    
+
+print(df)
 df.to_excel('mdone_one_node.xlsx')
