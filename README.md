@@ -23,5 +23,5 @@ title: Two-node M/D/1 system
   graph LR;
     A("Entry point")
     B("Leaving point")
-      A --> node --> node --> B
+      A --> node#1 --> node#2 --> B
 ```
