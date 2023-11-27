@@ -15,7 +15,13 @@ pip install -r requirements.txt
 Now you can run it
 
 ```
-.\mdone_one_node.py
+mdone_one_node.py
+```
+
+or
+
+```
+mdone_two_node.py
 ```
 
 <hr>
