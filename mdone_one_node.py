@@ -80,3 +80,7 @@ try:
     df.to_excel('mdone_one_node.xlsx')
 except Exception as e:
     print('Cannot save: ', e)
+    df['rho (ser/arr)'] = [item[0, 1] / item[0, 0] for k, item in fast_data.items()]
+
+print(df)
+df.to_excel('mdone_one_node.xlsx')
