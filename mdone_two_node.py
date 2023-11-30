@@ -13,7 +13,7 @@ def ser(t: float):
     Args:
         t (float): current time
     """
-    return t + 0.00112
+    return t + 892
 
 # AGENTS
 ag_slow = qt.Agent(
