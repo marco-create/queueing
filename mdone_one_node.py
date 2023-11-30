@@ -4,7 +4,6 @@
 import random
 import queueing_tool as qt
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # SERVICE TIME
 def ser(t: float):
@@ -14,12 +13,12 @@ def ser(t: float):
     Args:
         t (float): current time
     """
-    return t + 0.15
+    return t + 892
 
 # AGENTS
 ag_slow = qt.Agent()
 ag_fast = qt.Agent(
-    arrival_f = lambda t: t + random.expovariate(0.25)
+    arrival_f = lambda t: t + random.expovariate(500)
 )
 
 # Prepare the one-node network
@@ -39,7 +38,7 @@ q_classes = { 1: qt.QueueServer }
 q_args = {
     1: {
         'num_server': 1,
-        'arrival_f': lambda t: t + random.expovariate(1.5),  # fast requests
+        'arrival_f': lambda t: t + random.expovariate(125),  # slow requests
         'service_f': ser
     },
 }
@@ -55,32 +54,29 @@ qn.start_collecting_data()
 
 # SIMULATE
 ag_slow.queue_action(queue=qn)
-qn.simulate(n=10)
+qn.simulate(n=50000)
 slow_data = qn.get_agent_data(return_header=True)
 cols = (slow_data[1]).split(',')
 
 # inject the faster lambdas
 ag_fast.queue_action(queue=qn)
-qn.simulate(n=10)
+qn.simulate(n=50000)
 fast_data = qn.get_agent_data()
 
 df = pd.DataFrame(data=[item[0] for k, item in fast_data.items()], columns=cols)
-df['q_id_exit'] = [item[1,-1] for k, item in fast_data.items()]
-df['time_spent'] = [item[0, 2] - item[0, 0] for k, item in fast_data.items()]
+df['exit_node'] = [item[1,-1] for k, item in fast_data.items()]
 
+df.rename(columns={
+    'arrival': 'arrival_time',
+    'service': 'service_start_time',
+    'departure': 'departure_time',
+    'num_queued': 'len_queue_before_this_request',
+    'num_total': 'tot_requests_in_queue',
+    'q_id': 'entry_node'
+}, inplace=True)
 
-try:
-    df['rho (arr/ser)'] = [item[0, 0] / item[0, 1] for k, item in fast_data.items()]
-except Exception as e:
-    print('Run again.')
-    # for now force it (need to find a better solution)
-    df['rho (arr/ser)'] = [item[0, 0] / item[0, 1] for k, item in fast_data.items()]
-    
+print(df)
 try:
     df.to_excel('mdone_one_node.xlsx')
 except Exception as e:
     print('Cannot save: ', e)
-    df['rho (ser/arr)'] = [item[0, 1] / item[0, 0] for k, item in fast_data.items()]
-
-print(df)
-df.to_excel('mdone_one_node.xlsx')

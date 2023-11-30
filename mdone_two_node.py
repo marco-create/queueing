@@ -2,8 +2,8 @@
 
 """
 import random
-import pandas as pd
 import queueing_tool as qt
+import pandas as pd
 
 # SERVICE TIME
 def ser(t: float):
@@ -13,12 +13,14 @@ def ser(t: float):
     Args:
         t (float): current time
     """
-    return t + 0.15
+    return t + 0.00112
 
 # AGENTS
-ag_slow = qt.Agent()
+ag_slow = qt.Agent(
+    arrival_f = lambda t: t + random.expovariate(125)
+)
 ag_fast = qt.Agent(
-    arrival_f = lambda t: t + random.expovariate(0.25)
+    arrival_f = lambda t: t + random.expovariate(500)
 )
 
 # Prepare the one-node network
@@ -56,34 +58,40 @@ qn.start_collecting_data()
 
 # SIMULATE
 ag_slow.queue_action(queue=qn)
-qn.simulate(n=10)
+qn.simulate(n=50000)
 slow_data = qn.get_agent_data(return_header=True)
 cols = (slow_data[1]).split(',')
 
 # inject the faster lambdas
 ag_fast.queue_action(queue=qn)
-qn.simulate(n=10)
+qn.simulate(n=50000)
 fast_data = qn.get_agent_data()
 
 # remove items that did not leave the system
 clean_data = [item for k, item in fast_data.items() if len(item) > 1]
 
 df_nodeone= pd.DataFrame(data=[item[0] for item in clean_data if item[0, -1] == 0.0], columns=cols)
-df_nodeone['time_spent'] = [item[0, 2] - item[0, 0] for item in clean_data if item[0, -1] == 0.0]
-df_nodeone['rho (arr/ser)'] = [item[0, 0] / item[0, 1] for item in clean_data if item[0, -1] == 0.0]
-df_nodeone['nodes'] = 'first'
+df_nodeone['nodes'] = '1'
 
 df_nodetwo= pd.DataFrame(data=[item[1] for item in clean_data if item[1, -1] == 1.0], columns=cols)
-df_nodetwo['time_spent'] = [item[1, 2] - item[1, 0] for item in clean_data if item[1, -1] == 1.0]
-df_nodetwo['rho (arr/ser)'] = [item[1, 0] / item[1, 1] for item in clean_data if item[1, -1] == 1.0]
-df_nodetwo['nodes'] = 'second'
+df_nodetwo['nodes'] = '2'
 
 df_nodeall= pd.DataFrame(data=[item[2] for item in clean_data if len(item) >2], columns=cols)
-df_nodeall['time_spent'] = [item[1, 2] - item[0, 0] for item in clean_data if len(item) >2]
-df_nodeall['rho (arr/ser)'] = [item[0, 0] / item[1, 1] for item in clean_data if len(item) >2]
-df_nodeall['nodes'] = 'tot'
+df_nodeall['nodes'] = 'all'
 
 frames = [df_nodeone, df_nodetwo, df_nodeall]
 concat_frames = pd.concat(frames)
 
 concat_frames.to_excel('mdone_two_node.xlsx')
+
+
+concat_frames.rename(columns={
+    'arrival': 'arrival_time',
+    'service': 'service_start_time',
+    'departure': 'departure_time',
+    'num_queued': 'len_queue_before_this_request',
+    'num_total': 'tot_requests_in_queue',
+    'q_id': 'entry_node'
+}, inplace=True)
+
+print(concat_frames)
