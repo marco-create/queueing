@@ -13,14 +13,18 @@ def ser(t: float):
     Args:
         t (float): current time
     """
-    return t + 892
+    # return t + 892
+    return t + 0.00112
 
 # AGENTS
 ag_slow = qt.Agent(
-    arrival_f = lambda t: t + random.expovariate(125)
+    arrival_f = lambda t: t + random.expovariate(lambd=125)
+)
+ag_mid = qt.Agent(
+    arrival_f = lambda t: t + random.expovariate(lambd=300)
 )
 ag_fast = qt.Agent(
-    arrival_f = lambda t: t + random.expovariate(500)
+    arrival_f = lambda t: 1/(t + random.expovariate(lambd=500))
 )
 
 # Prepare the one-node network
@@ -58,40 +62,63 @@ qn.start_collecting_data()
 
 # SIMULATE
 ag_slow.queue_action(queue=qn)
-qn.simulate(n=50000)
+qn.simulate(n=5000)
 slow_data = qn.get_agent_data(return_header=True)
 cols = (slow_data[1]).split(',')
 
+# inject the mid lambdas
+ag_mid.queue_action(queue=qn)
+qn.simulate(n=5000)
+mid_data = qn.get_agent_data()
+
 # inject the faster lambdas
 ag_fast.queue_action(queue=qn)
-qn.simulate(n=50000)
-fast_data = qn.get_agent_data()
+qn.simulate(n=5000)
+
+# Retrieve all data
+all_data = qn.get_agent_data()
 
 # remove items that did not leave the system
-clean_data = [item for k, item in fast_data.items() if len(item) > 1]
+clean_data = [item for k, item in all_data.items() if len(item) > 1]
 
-df_nodeone= pd.DataFrame(data=[item[0] for item in clean_data if item[0, -1] == 0.0], columns=cols)
-df_nodeone['nodes'] = '1'
+df_nodeone = pd.DataFrame(data=[item[0] for item in clean_data if item[0, -1] == 0.0], columns=cols)
+df_nodeone['time_spent'] = [item[0, 2] - item[0, 0] for item in clean_data if item[0, -1] == 0.0]
 
 df_nodetwo= pd.DataFrame(data=[item[1] for item in clean_data if item[1, -1] == 1.0], columns=cols)
-df_nodetwo['nodes'] = '2'
+df_nodetwo['time_spent'] = [item[1, 2] - item[1, 0] for item in clean_data if item[1, -1] == 1.0]
 
-df_nodeall= pd.DataFrame(data=[item[2] for item in clean_data if len(item) >2], columns=cols)
-df_nodeall['nodes'] = 'all'
+df_nodelast= pd.DataFrame(data=[item[1] for item in clean_data if item[1, -1] == 2.0], columns=cols)
 
-frames = [df_nodeone, df_nodetwo, df_nodeall]
+'''
+No need for a "all" column, since with the departure time from the node 2
+we can calculate the overall time spent in the system
+'''
+
+frames = [df_nodeone, df_nodetwo, df_nodelast]
 concat_frames = pd.concat(frames)
 
-concat_frames.to_excel('mdone_two_node.xlsx')
-
-
 concat_frames.rename(columns={
-    'arrival': 'arrival_time',
-    'service': 'service_start_time',
-    'departure': 'departure_time',
-    'num_queued': 'len_queue_before_this_request',
+    'num_queued': 'requests_before',
     'num_total': 'tot_requests_in_queue',
-    'q_id': 'entry_node'
+    'q_id': 'node'
 }, inplace=True)
+concat_frames.to_csv('mdone_two_node.csv', float_format='%.5f')
 
-print(concat_frames)
+print('''
+Various information from the system
+Remember: 
+    - service and departure time of node 2 are always 0. This is the exiting node.
+      Here "arrival" means that the requests arrives at the exit.
+''')
+print(
+    concat_frames.groupby(['node'])[['arrival']].describe()
+)
+print(
+    concat_frames.groupby(['node'])[['service']].describe()
+)
+print(
+    concat_frames.groupby(['node'])[['departure']].describe()
+)
+print(
+    concat_frames.groupby(['node'])[['time_spent']].describe()
+)
