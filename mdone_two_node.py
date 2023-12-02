@@ -102,7 +102,7 @@ concat_frames.rename(columns={
     'num_total': 'tot_requests_in_queue',
     'q_id': 'node'
 }, inplace=True)
-concat_frames.to_csv('mdone_two_node.csv', float_format='%.5f')
+concat_frames.to_excel('mdone_two_node.xlsx', float_format='%.5f')
 
 print('''
 Various information from the system
