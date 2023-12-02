@@ -78,6 +78,6 @@ Various information from the system.
 ''')
 print(df.describe())
 try:
-    df.to_excel('mdone_one_node.csv', float_format='%.5f')
+    df.to_csv('mdone_one_node.csv', float_format='%.5f')
 except Exception as e:
     print('Cannot save: ', e)
