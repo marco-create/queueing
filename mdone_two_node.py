@@ -6,7 +6,7 @@ import queueing_tool as qt
 import pandas as pd
 
 # SERVICE TIME
-def ser(t: float):
+def ser_nodeone(t: float):
     """Define deterministic service time.\n
     Take the arrival time as t and add a constant.
 
@@ -15,6 +15,16 @@ def ser(t: float):
     """
     # return t + 892
     return t + 0.00112
+
+def ser_nodetwo(t: float):
+    """Define deterministic service time.\n
+    Take the arrival time as t and add a constant.
+
+    Args:
+        t (float): current time
+    """
+    # return t + 892
+    return t + 0.001313
 
 # AGENTS
 ag_slow = qt.Agent(
@@ -44,12 +54,13 @@ g = qt.adjacency2graph(
 q_classes = { 1: qt.QueueServer, 2: qt.QueueServer }
 q_args = {
     1: {
-        'service_f': ser
+        'service_f': ser_nodeone
     },
     2: {
-        'service_f': ser
+        'service_f': ser_nodetwo
     },
 }
+
 qn = qt.QueueNetwork(
     g = g,
     q_classes=q_classes,
@@ -102,13 +113,13 @@ concat_frames.rename(columns={
     'num_total': 'tot_requests_in_queue',
     'q_id': 'node'
 }, inplace=True)
-concat_frames.to_excel('mdone_two_node.xlsx', float_format='%.5f')
 
 print('''
 Various information from the system
 Remember: 
     - service and departure time of node 2 are always 0. This is the exiting node.
-      Here "arrival" means that the requests arrives at the exit.
+      Here "arrival" means that the requests arrives at the exit, so there are no
+      other service or departure.
 ''')
 print(
     concat_frames.groupby(['node'])[['arrival']].describe()
@@ -122,3 +133,8 @@ print(
 print(
     concat_frames.groupby(['node'])[['time_spent']].describe()
 )
+
+try:
+    concat_frames.to_excel('mdone_two_node.xlsx', float_format='%.5f')
+except Exception as e:
+    print('Cannot save: ', e)
