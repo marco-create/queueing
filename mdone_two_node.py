@@ -98,47 +98,58 @@ dat = [[n] + list(item) for n, req in enumerate(clean_data) for item in req]
 cols.insert(0, 'agent_id')
 df = pd.DataFrame(data=[req for req in dat], columns=cols)
 
-df['time_spent'] = [req[3] - req[1] if req[3]-req[1]>0 else pd.NA for req in dat]
+times = []
+for count, req in enumerate(dat):
+    if req[3] - req[1] > 0:
+        times.append(req[3]-req[1])
+    else:
+        if req[0] == dat[count-2][0]: # 2 nodes + 1
+            times.append(req[1]-dat[count-2][1])
+        if req[0] == dat[count-1][0] and req[0] != dat[count-2][0]:
+            times.append(req[1]-dat[count-1][1])
+            
 
-nodes_info = []
-for idx, req in all_data.items():
-    if len(req) == 3:
-        first = req[0, 2] - req[0, 0]
-        second = req[len(req)-2, 2] - req[len(req)-2, 0]
-        third = req[len(req)-1, 0] - req[0, 0]
-        nodes_info.append(
-            {
-                f'req: {idx[1]}': {
-                    'time_node_one': req[0, 2] - req[0, 0],
-                    'time_node_two': req[len(req)-2, 2] - req[0, 0],
-                    'time_overall': req[len(req)-1, 0] - req[0, 0]
-                }
-            }
-        )
-    if len(req) == 2:
-        first = req[0, 2] - req[0, 0]
-        third = req[len(req)-1, 0] - req[0, 0]
-        nodes_info.append(
-            {
-                f'req: {idx[1]}': {
-                    'time_node_one': req[0, 2] - req[0, 0],
-                    'time_node_two': pd.NA,
-                    'time_overall': req[len(req)-1, 0] - req[0, 0]
-                }
-            }
-        )
+df['time_spent'] = [*times]
+# df['time_spent'] = [req[3] - req[1] if req[3]-req[1]>0 else req[1] for req in dat]
+
+# nodes_info = []
+# for idx, req in all_data.items():
+#     if len(req) == 3:
+#         first = req[0, 2] - req[0, 0]
+#         second = req[len(req)-2, 2] - req[len(req)-2, 0]
+#         third = req[len(req)-1, 0] - req[0, 0]
+#         nodes_info.append(
+#             {
+#                 f'req: {idx[1]}': {
+#                     'time_node_one': req[0, 2] - req[0, 0],
+#                     'time_node_two': req[len(req)-2, 2] - req[0, 0],
+#                     'time_overall': req[len(req)-1, 0] - req[0, 0]
+#                 }
+#             }
+#         )
+#     if len(req) == 2:
+#         first = req[0, 2] - req[0, 0]
+#         third = req[len(req)-1, 0] - req[0, 0]
+#         nodes_info.append(
+#             {
+#                 f'req: {idx[1]}': {
+#                     'time_node_one': req[0, 2] - req[0, 0],
+#                     'time_node_two': pd.NA,
+#                     'time_overall': req[len(req)-1, 0] - req[0, 0]
+#                 }
+#             }
+#         )
+
+# handle_dict = {}
+# for item in nodes_info:
+#     for key, value in item.items():
+#         req_number = key.split(': ')[1]
+#         handle_dict[req_number] = value
         
-    
-handle_dict = {}
-for item in nodes_info:
-    for key, value in item.items():
-        req_number = key.split(': ')[1]
-        handle_dict[req_number] = value
-        
-info = pd.DataFrame(data=handle_dict).T
+# info = pd.DataFrame(data=handle_dict).T
 try:
     df.to_excel('mdone_two_node.xlsx')
-    info.to_excel('two_node_info.xlsx', float_format='%.4f')
+    # info.to_excel('two_node_info.xlsx', float_format='%.4f')
 except Exception as e:
     print('Cannot save: ', e)
     
