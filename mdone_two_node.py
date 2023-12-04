@@ -34,7 +34,7 @@ ag_mid = qt.Agent(
     arrival_f = lambda t: t + random.expovariate(lambd=300)
 )
 ag_fast = qt.Agent(
-    arrival_f = lambda t: 1/(t + random.expovariate(lambd=500))
+    arrival_f = lambda t: t + random.expovariate(lambd=500)
 )
 
 # Prepare the one-node network
@@ -54,7 +54,7 @@ g = qt.adjacency2graph(
 q_classes = { 1: qt.QueueServer, 2: qt.QueueServer }
 q_args = {
     1: {
-        'service_f': ser_nodeone
+        'service_f': ser_nodeone,
     },
     2: {
         'service_f': ser_nodetwo
@@ -92,49 +92,52 @@ all_data = qn.get_agent_data()
 # remove items that did not leave the system
 clean_data = [item for k, item in all_data.items() if len(item) > 1]
 
-df_nodeone = pd.DataFrame(data=[item[0] for item in clean_data if item[0, -1] == 0.0], columns=cols)
-df_nodeone['time_spent'] = [item[0, 2] - item[0, 0] for item in clean_data if item[0, -1] == 0.0]
+# Store requests
+dat = [[n] + list(item) for n, req in enumerate(clean_data) for item in req]
 
-df_nodetwo= pd.DataFrame(data=[item[1] for item in clean_data if item[1, -1] == 1.0], columns=cols)
-df_nodetwo['time_spent'] = [item[1, 2] - item[1, 0] for item in clean_data if item[1, -1] == 1.0]
+cols.insert(0, 'agent_id')
+df = pd.DataFrame(data=[req for req in dat], columns=cols)
 
-df_nodelast= pd.DataFrame(data=[item[1] for item in clean_data if item[1, -1] == 2.0], columns=cols)
-
-'''
-No need for a "all" column, since with the departure time from the node 2
-we can calculate the overall time spent in the system
-'''
-
-frames = [df_nodeone, df_nodetwo, df_nodelast]
-concat_frames = pd.concat(frames)
-
-concat_frames.rename(columns={
-    'num_queued': 'requests_before',
-    'num_total': 'tot_requests_in_queue',
-    'q_id': 'node'
-}, inplace=True)
-
-print('''
-Various information from the system
-Remember: 
-    - service and departure time of node 2 are always 0. This is the exiting node.
-      Here "arrival" means that the requests arrives at the exit, so there are no
-      other service or departure.
-''')
-print(
-    concat_frames.groupby(['node'])[['arrival']].describe()
-)
-print(
-    concat_frames.groupby(['node'])[['service']].describe()
-)
-print(
-    concat_frames.groupby(['node'])[['departure']].describe()
-)
-print(
-    concat_frames.groupby(['node'])[['time_spent']].describe()
-)
-
+nodes_info = []
+for idx, req in all_data.items():
+    if len(req) == 3:
+        first = req[0, 2] - req[0, 0]
+        second = req[len(req)-2, 2] - req[len(req)-2, 0]
+        third = req[len(req)-1, 0] - req[0, 0]
+        nodes_info.append(
+            {
+                f'req: {idx[1]}': {
+                    'time_node_one': req[0, 2] - req[0, 0],
+                    'time_node_two': req[len(req)-2, 2] - req[0, 0],
+                    'time_overall': req[len(req)-1, 0] - req[0, 0]
+                }
+            }
+        )
+    if len(req) == 2:
+        first = req[0, 2] - req[0, 0]
+        third = req[len(req)-1, 0] - req[0, 0]
+        nodes_info.append(
+            {
+                f'req: {idx[1]}': {
+                    'time_node_one': req[0, 2] - req[0, 0],
+                    'time_node_two': pd.NA,
+                    'time_overall': req[len(req)-1, 0] - req[0, 0]
+                }
+            }
+        )
+        
+    
+handle_dict = {}
+for item in nodes_info:
+    for key, value in item.items():
+        req_number = key.split(': ')[1]
+        handle_dict[req_number] = value
+        
+info = pd.DataFrame(data=handle_dict).T.reset_index(names=['request'])
 try:
-    concat_frames.to_excel('mdone_two_node.xlsx', float_format='%.5f')
+    df.to_excel('mdone_two_node.xlsx')
+    info.to_excel('two_node_info.xlsx', float_format='%.4f')
 except Exception as e:
     print('Cannot save: ', e)
+    
+print('done check excel file.')
