@@ -133,7 +133,7 @@ for item in nodes_info:
         req_number = key.split(': ')[1]
         handle_dict[req_number] = value
         
-info = pd.DataFrame(data=handle_dict).T.reset_index(names=['request'])
+info = pd.DataFrame(data=handle_dict).T
 try:
     df.to_excel('mdone_two_node.xlsx')
     info.to_excel('two_node_info.xlsx', float_format='%.4f')
