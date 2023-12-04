@@ -98,6 +98,8 @@ dat = [[n] + list(item) for n, req in enumerate(clean_data) for item in req]
 cols.insert(0, 'agent_id')
 df = pd.DataFrame(data=[req for req in dat], columns=cols)
 
+df['time_spent'] = [req[3] - req[1] if req[3]-req[1]>0 else pd.NA for req in dat]
+
 nodes_info = []
 for idx, req in all_data.items():
     if len(req) == 3:
