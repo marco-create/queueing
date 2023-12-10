@@ -6,15 +6,25 @@ import queueing_tool as qt
 import pandas as pd
 
 # SERVICE TIME
-def ser_nodeone(t: float):
+def ser(t: float):
     """Define deterministic service time.\n
     Take the arrival time as t and add a constant.
 
     Args:
         t (float): current time
     """
-    # return t + 892
-    return t + 0.00112
+    return t + 0.000012
+
+def identity(t: float):
+    """Handler function for returning the current time
+
+    Args:
+        t (float): current time
+
+    Returns:
+        (float): current time
+    """
+    return t
 
 def ser_nodetwo(t: float):
     """Define deterministic service time.\n
