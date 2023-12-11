@@ -1,4 +1,4 @@
-"""Generate an M/D/1 system with one node and two different lambdas entering the network
+"""Generate an M/D/1 system with two nodes and two different lambdas entering the network
 
 """
 import random
@@ -16,6 +16,15 @@ def ser(t: float):
     """
     return t + 0.000012
 
+def ser_nodetwo(t: float):
+    """Define deterministic service time.\n
+    Take the arrival time as t and add a constant.
+
+    Args:
+        t (float): current time
+    """
+    return t + 0.001313
+
 def identity(t: float):
     """Handler function for returning the current time
 
@@ -32,30 +41,6 @@ slow = 333.33333
 fast = 63333.3334
 slow_rate = lambda t:  t + random.expovariate(lambd=1.0/slow)
 fast_rate = lambda t: t + random.expovariate(lambd=1.0/fast)
-# def arr_slow(t: float):
-#     """Return arrival time with slow rate
-
-#     Args:
-#         t (float): current time
-
-#     Returns:
-#         (float): arrival time
-#     """
-#     return t + random.expovariate(lambd=(333.33333))
-#     # return t + random.expovariate(lambd=1.0/33333.3333)
-
-# def arr_fast(t: float):
-#     """Return arrival time with fast rate
-
-#     Args:
-#         t (float): current time
-
-#     Returns:
-#         (float): arrival time
-#     """
-#     return t + random.expovariate(lambd=(63333.3334))
-#     # return t + random.expovariate(lambd=1.0/633333.667)
-
 
 # AGENTS
 class FastAgent(qt.Agent):
@@ -74,13 +59,15 @@ q_classes = { 1: qt.QueueServer, 2: qt.QueueServer, 2: qt.QueueServer }
 adja_list = {
     0: [2],
     1: [2],
-    2: [3]
+    2: [3],
+    3: [4]
 }
 
 edge_list = {
     0: {2: 1},
     1: {2: 2},
-    2: {3: 3}
+    2: {3: 3},
+    3: {4: 4}
 }
 
 g = qt.adjacency2graph(
@@ -102,13 +89,17 @@ q_args = {
     3: {
         'service_f': ser,
     },
+    4: {
+        'service_f': ser_nodetwo,
+    },
 }
-
 qn = qt.QueueNetwork(
-    g= g, q_classes=q_classes, q_args=q_args
+    g = g,
+    q_classes=q_classes,
+    q_args=q_args
 )
 
-# init and accept agents from outside
+# init and accept agents
 qn.initialize(edge_type=[1, 2])
 qn.start_collecting_data()
 
@@ -125,25 +116,29 @@ df = pd.DataFrame(data=[req for req in clean_data], columns=[cols])
 
 times = []
 for count, req in enumerate(clean_data):
-    if req[2] != 0.0:   # the leaving node
+    if req[2] != 0.0 and req[-1] in [0, 1, 2]:   # the leaving node
         times.append(pd.NA)
-    else:
+    if req[-1] == 3.0:
         times.append(req[1] - clean_data[count-2][1])
-
+    if req[-1] == 4.0:
+            times.append(req[1] - clean_data[count-3][1])
+        
 df['time_spent'] = [*times]
 pd.options.display.float_format = '{:,.9f}'.format
-# print(df)
 
-# slow info
 slow_d = {k[1:3]: v for k, v in dat[0].items() if len(v) > 2 and k[2] == 'slow'}
 times_slow = [v for k, v in slow_d.items()]
 low = []
 for req in times_slow:
     low.append(req[2, 0] - req[0, 0])
-print('Average time spent for slow lambdas: ', format(float(np.average(low)), '.9f'))
+print('Average time spent within first node: ', format(float(np.average(low)), '.9f'))
+
+for req in times_slow:
+    low.append(req[3, 0] - req[0, 0])
+print('Average time spent within whole system: ', format(float(np.average(low)), '.9f'))
 
 print(df.describe())
 try:
-    df.to_excel('mdone_one_node.xlsx', float_format='%.5f')
+    df.to_excel('mdone_two_node.xlsx', float_format='%.5f')
 except Exception as e:
     print('Cannot save: ', e)
