@@ -1,4 +1,6 @@
-"""Generate an M/D/1 system with one node and two different lambdas entering the network
+"""Generate an M/D/1 system.
+System with one node and two different lambdas entering the network.
+The outcome data will take into account only the slower lambdas.
 
 """
 import random
@@ -6,7 +8,7 @@ import numpy as np
 import queueing_tool as qt
 import pandas as pd
 
-# SERVICE TIME
+# define SERVICE TIME
 def ser(t: float):
     """Define deterministic service time.\n
     Take the arrival time as t and add a constant.
@@ -16,6 +18,7 @@ def ser(t: float):
     """
     return t + 0.000012
 
+# define IDENTITY SERVICE
 def identity(t: float):
     """Handler function for returning the current time
 
@@ -31,31 +34,7 @@ def identity(t: float):
 slow = 333.33333
 fast = 63333.3334
 slow_rate = lambda t:  t + random.expovariate(lambd=1.0/slow)
-fast_rate = lambda t: t + random.expovariate(lambd=1.0/fast)
-# def arr_slow(t: float):
-#     """Return arrival time with slow rate
-
-#     Args:
-#         t (float): current time
-
-#     Returns:
-#         (float): arrival time
-#     """
-#     return t + random.expovariate(lambd=(333.33333))
-#     # return t + random.expovariate(lambd=1.0/33333.3333)
-
-# def arr_fast(t: float):
-#     """Return arrival time with fast rate
-
-#     Args:
-#         t (float): current time
-
-#     Returns:
-#         (float): arrival time
-#     """
-#     return t + random.expovariate(lambd=(63333.3334))
-#     # return t + random.expovariate(lambd=1.0/633333.667)
-
+fast_rate = lambda t: t + random.expovariate(lambd=1.0/fast)
 
 # AGENTS
 class FastAgent(qt.Agent):
@@ -68,8 +47,16 @@ class SlowAgent(qt.Agent):
         super().__init__(agent_id)
         self.agent_id = (agent_id[0], agent_id[1], 'slow')
 
-# Prepare the one-node network
-q_classes = { 1: qt.QueueServer, 2: qt.QueueServer, 2: qt.QueueServer }
+"""Prepare the network.
+We define:
+- one queue where slow lambdas travel
+- one queue where fast lambdas travel
+
+The adjacent list show how edges communicate.
+Queue 0 and 1 go to node 2. From here they reach the leaving point on 3.
+Types of queue are defined in q_args.
+"""
+q_classes = { 1: qt.QueueServer, 2: qt.QueueServer, 3: qt.QueueServer }
 
 adja_list = {
     0: [2],
@@ -104,6 +91,7 @@ q_args = {
     },
 }
 
+# Instantiate the network
 qn = qt.QueueNetwork(
     g= g, q_classes=q_classes, q_args=q_args
 )
@@ -115,6 +103,9 @@ qn.start_collecting_data()
 # SIMULATE
 qn.simulate(n=20000)
 dat = qn.get_agent_data(return_header=True)
+
+"""Data filtered for "slow" lambdas and prepared for Dataframe
+"""
 cols = (dat[1]).split(',')
 cols.insert(0, 'agent_id')
 
@@ -134,7 +125,7 @@ df['time_spent'] = [*times]
 pd.options.display.float_format = '{:,.9f}'.format
 # print(df)
 
-# slow info
+# Get slow info
 slow_d = {k[1:3]: v for k, v in dat[0].items() if len(v) > 2 and k[2] == 'slow'}
 times_slow = [v for k, v in slow_d.items()]
 low = []
@@ -143,6 +134,8 @@ for req in times_slow:
 print('Average time spent for slow lambdas: ', format(float(np.average(low)), '.9f'))
 
 print(df.describe())
+
+# Try to save as excel
 try:
     df.to_excel('mdone_one_node.xlsx', float_format='%.5f')
 except Exception as e:
